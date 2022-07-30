@@ -200,6 +200,7 @@ void QWindowsUser32DLL::init()
     getDisplayAutoRotationPreferences = (GetDisplayAutoRotationPreferences)library.resolve("GetDisplayAutoRotationPreferences");
     setDisplayAutoRotationPreferences = (SetDisplayAutoRotationPreferences)library.resolve("SetDisplayAutoRotationPreferences");
 
+    if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows8) { // Qt6 for Win7
     enableMouseInPointer = (EnableMouseInPointer)library.resolve("EnableMouseInPointer");
     getPointerType = (GetPointerType)library.resolve("GetPointerType");
     getPointerInfo = (GetPointerInfo)library.resolve("GetPointerInfo");
@@ -210,6 +211,7 @@ void QWindowsUser32DLL::init()
     getPointerPenInfo = (GetPointerPenInfo)library.resolve("GetPointerPenInfo");
     getPointerPenInfoHistory = (GetPointerPenInfoHistory)library.resolve("GetPointerPenInfoHistory");
     skipPointerFrameMessages = (SkipPointerFrameMessages)library.resolve("SkipPointerFrameMessages");
+    } // 
 
     if (QOperatingSystemVersion::current()
         >= QOperatingSystemVersion(QOperatingSystemVersion::Windows, 10, 0, 14393)) {
@@ -231,6 +233,10 @@ bool QWindowsUser32DLL::supportsPointerApi()
 
 void QWindowsShcoreDLL::init()
 {
+    // Qt6 for Win7
+    if (QOperatingSystemVersion::current() < QOperatingSystemVersion::Windows8_1)
+        return;
+    //
     QSystemLibrary library(QStringLiteral("SHCore"));
     getProcessDpiAwareness = (GetProcessDpiAwareness)library.resolve("GetProcessDpiAwareness");
     setProcessDpiAwareness = (SetProcessDpiAwareness)library.resolve("SetProcessDpiAwareness");
@@ -400,6 +406,11 @@ bool QWindowsContext::initPointer(unsigned integrationOptions)
     if (integrationOptions & QWindowsIntegration::DontUseWMPointer)
         return false;
 
+    // Qt6 for Win7
+    if (QOperatingSystemVersion::current() < QOperatingSystemVersion::Windows8)
+        return false;
+    //
+
     if (!QWindowsContext::user32dll.supportsPointerApi())
         return false;
 
@@ -503,6 +514,7 @@ void QWindowsContext::setProcessDpiAwareness(QtWindows::ProcessDpiAwareness dpiA
 void QWindowsContext::setProcessDpiV2Awareness()
 {
     qCDebug(lcQpaWindows) << __FUNCTION__;
+    if (QWindowsContext::user32dll.setProcessDpiAwarenessContext) { // Qt6 for Win7
     const BOOL ok = QWindowsContext::user32dll.setProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     if (ok) {
         QWindowsContextPrivate::m_v2DpiAware = true;
@@ -515,6 +527,7 @@ void QWindowsContext::setProcessDpiV2Awareness()
                 << QWindowsContext::comErrorString(errorCode);
         }
     }
+    } //
 }
 
 bool QWindowsContext::isDarkMode()
